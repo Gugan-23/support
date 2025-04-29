@@ -1,7 +1,11 @@
-#!/bin/bash
-
-# Install Python dependencies
-pip install -r requirements.txt
-
-# Download spaCy English model
-python -m spacy download en_core_web_sm
+services:
+  - type: web
+    name: dgp
+    runtime: python
+    buildCommand: "./build.sh"  # Make sure this points to the build script
+    startCommand: "gunicorn --bind :5000 --workers 1 --timeout 120 app:app"
+    envVars:
+      - key: MONGO_URI
+        value: "mongodb+srv://vgugan16:gugan2004@cluster0.qyh1fuo.mongodb.net/golang?retryWrites=true&w=majority"
+      - key: DEPLOYMENT_ENV
+        value: "production"
