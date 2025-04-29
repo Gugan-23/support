@@ -1,7 +1,7 @@
 flask
 pymongo
 pandas
-
+requests
 spacy
 numpy
 scikit-learn
