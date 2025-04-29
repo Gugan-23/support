@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DGP Chat Assistant</title>
+    <style>
+       body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(to right, #e3f2fd, #ffffff);
+    margin: 0;
+    padding: 40px 0;
+}
+
+#chat-container {
+    width: 100%;
+    max-width: 500px;
+    margin: auto;
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+#chat-box {
+    height: 320px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+#chat-box p {
+    margin: 8px 0;
+}
+
+#user-input {
+    width: 68%;
+    padding: 10px 12px;
+    font-size: 14px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+#user-input:focus {
+    border-color: #2196F3;
+}
+
+#send-btn, #mic-btn {
+    padding: 10px 16px;
+    font-size: 14px;
+    margin-left: 5px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.3s ease;
+}
+
+#send-btn {
+    background: linear-gradient(to right, #43cea2, #185a9d);
+    color: white;
+}
+
+#send-btn:hover {
+    background-color: #2e8b57;
+    transform: scale(1.05);
+}
+
+#mic-btn {
+    background: linear-gradient(to right, #2196F3, #6dd5ed);
+    color: white;
+}
+
+#mic-btn:hover {
+    background-color: #1e88e5;
+    transform: scale(1.05);
+}
+
+/* Mobile View (up to 600px width) */
+@media (max-width: 600px) {
+    #chat-container {
+        padding: 20px;
+        width: 100%;
+    }
+
+    h2 {
+        font-size: 18px;
+    }
+
+    #chat-box {
+        height: 250px;
+        font-size: 12px;
+    }
+
+    #user-input {
+        width: 70%;
+        font-size: 12px;
+    }
+
+    #send-btn, #mic-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+}
+
+/* Tablet View (600px to 900px width) */
+@media (min-width: 601px) and (max-width: 900px) {
+    #chat-container {
+        padding: 25px;
+        width: 80%;
+    }
+
+    h2 {
+        font-size: 20px;
+    }
+
+    #chat-box {
+        height: 280px;
+        font-size: 13px;
+    }
+
+    #user-input {
+        width: 72%;
+        font-size: 13px;
+    }
+
+    #send-btn, #mic-btn {
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+}
+
+/* Laptop/Tablet View (900px and above) */
+@media (min-width: 901px) {
+    #chat-container {
+        width: 500px;
+        padding: 25px;
+    }
+
+    h2 {
+        font-size: 24px;
+    }
+
+    #chat-box {
+        height: 320px;
+        font-size: 14px;
+    }
+
+    #user-input {
+        width: 68%;
+        font-size: 14px;
+    }
+
+    #send-btn, #mic-btn {
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+}
+
+</style>
+</head>
+<body>
+<div id="chat-container">
+    <h2 style="text-align:center;">Chat with DGP Assistant</h2>
+    <div id="chat-box"></div>
+    <input type="text" id="user-input" placeholder="Type your query...">
+    <button id="mic-btn">🎤</button>
+    <button id="send-btn">Send</button>
+</div>
+
+<script>
+    const sendBtn = document.getElementById('send-btn');
+    const micBtn = document.getElementById('mic-btn');
+    const userInput = document.getElementById('user-input');
+    const chatBox = document.getElementById('chat-box');
+
+    function appendToChat(content) {
+        chatBox.innerHTML += content;
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    sendBtn.addEventListener('click', () => {
+        const query = userInput.value.trim();
+        if (query === "") return;
+
+        appendToChat(`<p><strong>You:</strong> ${query}</p>`);
+        userInput.value = "";
+        fetch('/get-response', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `query=${encodeURIComponent(query)}`
+})
+.then(response => response.json())
+.then(data => {
+    // Assuming `data` contains the response from Flask
+    appendToChat(`<p><strong>DGP:</strong> ${data.reply}</p>`);
+
+    // Show the sentiment (POSITIVE/NEGATIVE)
+    appendToChat(`<p><em>Sentiment:</em> ${data.analysis.sentiment}</p>`);
+
+    // Optional: Display the sentiment score for more detail
+    appendToChat(`<p><em>Sentiment Score:</em> ${data.analysis.score.toFixed(2)}</p>`);
+
+    if (data.analysis.named_entities.length > 0) {
+        appendToChat(`<p><em>Entities:</em> ${data.analysis.named_entities.map(ent => `${ent[0]} (${ent[1]})`).join(', ')}</p>`);
+    }
+
+    // Check if SpeechSynthesis is supported
+    if ('speechSynthesis' in window) {
+        console.log("Speech Synthesis is supported.");
+
+        const utterance = new SpeechSynthesisUtterance(data.reply);
+        utterance.lang = 'en-US'; // Set the language to English (US)
+
+        // Optional: Adjust volume, rate, and pitch
+        utterance.volume = 1; // Volume (0 to 1)
+        utterance.rate = 1; // Speed of speech (0.1 to 10)
+        utterance.pitch = 1; // Pitch (0 to 2)
+
+        // Speak the text
+        speechSynthesis.speak(utterance);
+    } else {
+        console.error("Speech Synthesis is not supported in this browser.");
+    }
+})
+.catch(error => {
+    console.error("Error fetching data:", error);
+});
+
+
+
+    });
+
+    // Voice recognition setup
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+
+        micBtn.addEventListener('click', () => {
+            recognition.start();
+        });
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            userInput.value = transcript;
+        };
+
+        recognition.onerror = (event) => {
+            alert("Voice recognition error: " + event.error);
+        };
+    } else {
+        micBtn.disabled = true;
+        micBtn.title = "Your browser does not support speech recognition.";
+    }
+</script>
+</body>
+</html>
