@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import spacy
 import requests
+
+from spacy.cli import download
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.tree import DecisionTreeClassifier
 from pymongo import MongoClient
@@ -9,7 +11,12 @@ from pymongo import MongoClient
 app = Flask(__name__)
 
 # Load spaCy model
-nlp = spacy.load("en_core_web_sm")
+try:
+    nlp = spacy.load("en_core_web_sm")
+except OSError:
+    print("Downloading the model...")
+    download("en_core_web_sm")
+    nlp = spacy.load("en_core_web_sm")
 
 # MongoDB setup
 mongodb_uri = "mongodb+srv://vgugan16:gugan2004@cluster0.qyh1fuo.mongodb.net/golang?retryWrites=true&w=majority&appName=Cluster0"
